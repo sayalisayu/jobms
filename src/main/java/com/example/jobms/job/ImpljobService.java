@@ -1,7 +1,14 @@
 package com.example.jobms.job;
 
+import com.example.jobms.job.dto.JobwithCompannyDTO;
+import com.example.jobms.job.external.company;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,8 +24,84 @@ public class ImpljobService implements jobService {
 
 
     @Override
-    public List<jobs> findAll() {
-        return jobRepository.findAll();
+//    public List<JobwithCompannyDTO> findAll() {
+//        List<jobs> list = jobRepository.findAll();
+//        List<JobwithCompannyDTO> jobwithCompannyDTOs = new ArrayList<>();
+//        RestTemplate restTemplate = new RestTemplate();
+//        for (jobs job : list) {
+//            JobwithCompannyDTO jobwithCompannyDTO = new JobwithCompannyDTO();
+//            jobwithCompannyDTO.setJob(job);
+//            company Company = restTemplate.getForObject("http://localhost:8083/GetComapines", company.class);
+//            jobwithCompannyDTO.setCompany(Company);
+//            jobwithCompannyDTOs.add(jobwithCompannyDTO);
+//////        //System.out.println(("Company:"+Company.getName()));
+//////        assert Company != null;
+//////        System.out.println(("Company:"+Company.getCompanyid()));
+//////        System.out.println(("Company:"+Company.getName()));
+//////        return jobRepository.findAll();
+////
+////
+////        try {
+////            ResponseEntity<List<company>> response = restTemplate.exchange(
+////                    "http://localhost:8083/GetComapines",
+////                    HttpMethod.GET,
+////                    null,
+////                    new ParameterizedTypeReference<List<company>>() {}
+////            );
+////            List<company> companies = response.getBody();
+////
+////            if (companies != null && !companies.isEmpty()) {
+////                for (company c : companies) {
+////                    System.out.println("Company: " + c.getCompanyid() + ", Name: " + c.getName());
+////                }
+////            }
+////        } catch (Exception e) {
+////            System.err.println("Failed to fetch companies: " + e.getMessage());
+////            e.printStackTrace(); // Optional: More details
+////        }
+//
+//
+//        }
+//        return jobwithCompannyDTOs;
+//    }
+    public List<JobwithCompannyDTO> findAll() {
+        RestTemplate restTemplate = new RestTemplate();
+
+        List<company> companies = new ArrayList<>();
+        try {
+            ResponseEntity<List<company>> response = restTemplate.exchange(
+                    "http://localhost:8083/GetComapines",
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<company>>() {}
+            );
+            companies = response.getBody();
+        } catch (Exception e) {
+            System.err.println("Failed to fetch companies: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        List<jobs> jobList = jobRepository.findAll();
+        List<JobwithCompannyDTO> result = new ArrayList<>();
+
+        for (jobs job : jobList) {
+            JobwithCompannyDTO dto = new JobwithCompannyDTO();
+            dto.setJob(job);
+
+            // Match company from external service using job.getCompanyid() if available
+            if (companies != null) {
+                for (company comp : companies) {
+                    if (comp.getCompanyid().equals(job.getCompanyid())) {
+                        dto.setCompany(comp);
+                        break;
+                    }
+                }
+            }
+
+            result.add(dto);
+        }
+
+        return result;
     }
 
     @Override

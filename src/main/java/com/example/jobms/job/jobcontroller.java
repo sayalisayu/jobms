@@ -1,5 +1,6 @@
 package com.example.jobms.job;
 
+import com.example.jobms.job.dto.JobwithCompannyDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +17,9 @@ public class jobcontroller {
     }
     private List<jobs>jobs=new ArrayList<>();
     @GetMapping("/jobs")
-    public ResponseEntity<List<jobs>> findAll()
+    public ResponseEntity<List<JobwithCompannyDTO>> findAll()
     {
+
         return new ResponseEntity<>(service.findAll(), HttpStatus.OK);
     }
     @PostMapping("/Save")
