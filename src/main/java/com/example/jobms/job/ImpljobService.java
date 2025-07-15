@@ -1,6 +1,8 @@
 package com.example.jobms.job;
 
 import com.example.jobms.job.Mapper.JobMapper;
+import com.example.jobms.job.clients.CompanyClient;
+import com.example.jobms.job.clients.ReviewClient;
 import com.example.jobms.job.dto.JobwithCompannyDTO;
 import com.example.jobms.job.external.Review;
 import com.example.jobms.job.external.company;
@@ -17,7 +19,11 @@ import java.util.Optional;
 
 @Service
 public class ImpljobService implements jobService {
+    @Autowired
+    private CompanyClient CompanyClient;
     //private List<jobs> jobs = new ArrayList<>();
+    @Autowired
+    private ReviewClient  reviewClient;
     @Autowired
     RestTemplate restTemplate;
     private JobRepository jobRepository;
@@ -28,12 +34,14 @@ public class ImpljobService implements jobService {
 //        dto.setJob(job);
 
         // Assuming job has a companyId field
-        company Company = restTemplate.getForObject(
-                "http://COMPANYMS:8083/GetComapines/" + job.getCompanyid(),
-                company.class
-        );
-      ResponseEntity<List<Review>> reviewResponse=  restTemplate.exchange("http://reviewms:8084/reviews?companyId= "+job.getCompanyid(),HttpMethod.GET,null,new ParameterizedTypeReference<List<Review>>(){});
-      List<Review> reviews=reviewResponse.getBody();
+        company Company=CompanyClient.getCompany(job.getCompanyid());
+//        company Company = restTemplate.getForObject(
+//                "http://COMPANYMS:8083/GetComapines/" + job.getCompanyid(),
+//                company.class
+//        );
+        List<Review> reviews= reviewClient.getAllReviews(job.getCompanyid());
+//      ResponseEntity<List<Review>> reviewResponse=  restTemplate.exchange("http://reviewms:8084/reviews?companyId= "+job.getCompanyid(),HttpMethod.GET,null,new ParameterizedTypeReference<List<Review>>(){});
+//      List<Review> reviews=reviewResponse.getBody();
         JobwithCompannyDTO jobwithCompannyDTO = JobMapper.mapToJobWithCompanyDtO(job, Company,reviews);
        // jobwithCompannyDTO.setCompany(Company);
 
@@ -89,63 +97,103 @@ public class ImpljobService implements jobService {
         //RestTemplate restTemplate = new RestTemplate();
 
 
+//            List<JobwithCompannyDTO> result = new ArrayList<>();
+//
+//            try {
+//                // 1. Fetch all jobs from DB
+//                List<jobs> jobList = jobRepository.findAll();
+//
+//                // 2. Fetch all companies from external COMPANYMS
+//                ResponseEntity<List<company>> response = restTemplate.exchange(
+//                        "http://COMPANYMS:8083/GetComapines",
+//                        HttpMethod.GET,
+//                        null,
+//                        new ParameterizedTypeReference<List<company>>() {
+//                        }
+//                );
+//                List<company> companies = response.getBody();
+//
+//                // 3. Iterate jobs
+//                for (jobs job : jobList) {
+//                    // 3a. Find matching company
+//                    company matchedCompany = null;
+//                    if (companies != null) {
+//                        for (company comp : companies) {
+//                            if (comp.getCompanyid().equals(job.getCompanyid())) {
+//                                matchedCompany = comp;
+//                                break;
+//                            }
+//                        }
+//                    }
+//
+//                    // 3b. Fetch reviews for the current job’s companyId
+//                    List<Review> reviews = new ArrayList<>();
+//                    try {
+//                        ResponseEntity<List<Review>> reviewResponse = restTemplate.exchange(
+//                                "http://reviewms:8084/reviews?companyId=" + job.getCompanyid(),
+//                                HttpMethod.GET,
+//                                null,
+//                                new ParameterizedTypeReference<List<Review>>() {
+//                                }
+//                        );
+//                        reviews = reviewResponse.getBody();
+//                    } catch (Exception e) {
+//                        System.err.println("Failed to fetch reviews for companyId " + job.getCompanyid());
+//                        e.printStackTrace();
+//                    }
+//
+//                    // 3c. Map to DTO
+//                    JobwithCompannyDTO dto = JobMapper.mapToJobWithCompanyDtO(job, matchedCompany, reviews);
+//                    result.add(dto);
+//                }
+//
+//            } catch (Exception e) {
+//                System.err.println("Failed to fetch companies or jobs: " + e.getMessage());
+//                e.printStackTrace();
+//            }
+//
+//            return result;
+
             List<JobwithCompannyDTO> result = new ArrayList<>();
 
             try {
                 // 1. Fetch all jobs from DB
                 List<jobs> jobList = jobRepository.findAll();
 
-                // 2. Fetch all companies from external COMPANYMS
-                ResponseEntity<List<company>> response = restTemplate.exchange(
-                        "http://COMPANYMS:8083/GetComapines",
-                        HttpMethod.GET,
-                        null,
-                        new ParameterizedTypeReference<List<company>>() {
-                        }
-                );
-                List<company> companies = response.getBody();
-
-                // 3. Iterate jobs
+                // 2. Iterate jobs
                 for (jobs job : jobList) {
-                    // 3a. Find matching company
-                    company matchedCompany = null;
-                    if (companies != null) {
-                        for (company comp : companies) {
-                            if (comp.getCompanyid().equals(job.getCompanyid())) {
-                                matchedCompany = comp;
-                                break;
-                            }
-                        }
+                    // 2a. Get company from CompanyClient
+                    company company = null;
+                    try {
+                        company = CompanyClient.getCompany(job.getCompanyid());
+                    } catch (Exception e) {
+                        System.err.println("Failed to fetch company for companyId " + job.getCompanyid());
+                        e.printStackTrace();
                     }
 
-                    // 3b. Fetch reviews for the current job’s companyId
+                    // 2b. Get reviews from reviewClient
                     List<Review> reviews = new ArrayList<>();
                     try {
-                        ResponseEntity<List<Review>> reviewResponse = restTemplate.exchange(
-                                "http://reviewms:8084/reviews?companyId=" + job.getCompanyid(),
-                                HttpMethod.GET,
-                                null,
-                                new ParameterizedTypeReference<List<Review>>() {
-                                }
-                        );
-                        reviews = reviewResponse.getBody();
+                        reviews = reviewClient.getAllReviews(job.getCompanyid());
                     } catch (Exception e) {
                         System.err.println("Failed to fetch reviews for companyId " + job.getCompanyid());
                         e.printStackTrace();
                     }
 
-                    // 3c. Map to DTO
-                    JobwithCompannyDTO dto = JobMapper.mapToJobWithCompanyDtO(job, matchedCompany, reviews);
+                    // 2c. Map to DTO and add to result
+                    JobwithCompannyDTO dto = JobMapper.mapToJobWithCompanyDtO(job, company, reviews);
                     result.add(dto);
                 }
 
             } catch (Exception e) {
-                System.err.println("Failed to fetch companies or jobs: " + e.getMessage());
+                System.err.println("Failed to fetch job list: " + e.getMessage());
                 e.printStackTrace();
             }
 
             return result;
         }
+
+
 
         @Override
     public void createjob(jobs job) {
