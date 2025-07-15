@@ -19,21 +19,27 @@ public class jobs {
     private String location;
     private Long companyid;
 
+    public jobs() {
+
+    }
+
     public Long getCompanyid() {
         return companyid;
     }
 
-    public jobs(Long id, String title, String description, String minsalary, String maxsalary, String location) {
+    public jobs(Long id, String title, String description, String minsalary, String maxsalary, String location, Long companyid) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.minsalary = minsalary;
         this.maxsalary = maxsalary;
         this.location = location;
+        this.companyid = companyid;
     }
 
-    public jobs() {
+    public jobs(Long companyid) {
 
+        this.companyid = companyid;
     }
 
     public Long getId() {

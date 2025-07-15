@@ -29,11 +29,11 @@ public class jobcontroller {
         return new ResponseEntity<>("Value save successfully ",HttpStatus.OK) ;
     }
     @GetMapping("/jobs/{id}")
-    public ResponseEntity<jobs> findById(@PathVariable Long id)
-    {     jobs job=service.getJobByid(id);
-        if(job!=null)
+    public ResponseEntity<JobwithCompannyDTO> findById(@PathVariable Long id)
+    {    JobwithCompannyDTO jobwithCompannyDTO=service.getJobByid(id);
+        if(jobwithCompannyDTO!=null)
         {
-            return new ResponseEntity<>(job, HttpStatus.OK);
+            return new ResponseEntity<>(jobwithCompannyDTO, HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
